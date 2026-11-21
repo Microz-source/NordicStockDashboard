@@ -38,7 +38,7 @@ ApplicationWindow {
             }
 
 
-            ComboBox {
+            ComboBox {      //aksjevelger
                 id: stockSelector
 
                 Layout.preferredWidth: 280
@@ -70,7 +70,60 @@ ApplicationWindow {
                         "YAR.OL"
                     ]
 
-                    stockApiClient.fetchStockData(symbols[index])
+                    var periods = [7, 30, 90]
+
+                    stockApiClient.fetchStockData(
+                        symbols[index],
+                        periods[periodSelector.currentIndex]
+                    )
+                }
+            }
+            Label {
+                text: "Tidsperiode:"
+                color: "#1e293b"
+            }
+
+            ComboBox {          // tidsperiodevelger
+                id: periodSelector
+                Layout.preferredWidth: 130
+
+                model: ["7 dager", "30 dager", "90 dager"]
+                currentIndex: 1
+
+                onActivated: function(index) {
+                    var symbols = ["MOWI.OL", "MING.OL", "YAR.OL"]
+                    var periods = [7, 30, 90]
+
+                    stockApiClient.fetchStockData(
+                        symbols[stockSelector.currentIndex],
+                        periods[index]
+                    )
+                }
+
+                contentItem: Text {
+                    leftPadding: 10
+                    rightPadding: 30
+                    text: periodSelector.displayText
+                    color: "#1e293b"
+                    font.pixelSize: 14
+                    verticalAlignment: Text.AlignVCenter
+                    elide: Text.ElideRight
+                }
+            }
+
+            Button {            // oppdatering
+                id: refreshButton
+                text: "Oppdater"
+                palette.buttonText: "#1e293b"
+
+                onClicked: {
+                    var symbols = ["MOWI.OL", "MING.OL", "YAR.OL"]
+                    var periods = [7, 30, 90]
+
+                    stockApiClient.fetchStockData(
+                        symbols[stockSelector.currentIndex],
+                        periods[periodSelector.currentIndex]
+                    )
                 }
             }
         }
@@ -150,6 +203,31 @@ ApplicationWindow {
                     }
                 }
             }
+        }
+    }
+    Connections {
+        target: stockApiClient
+
+        function onErrorOccurred(message) {
+            errorDialog.text = message
+            errorDialog.open()
+        }
+    }
+
+    Dialog {
+        id: errorDialog
+        title: "Feil ved henting av aksjekurser"
+        modal: true
+        anchors.centerIn: parent
+        standardButtons: Dialog.Ok
+
+        property alias text: errorLabel.text
+
+        contentItem: Label {
+            id: errorLabel
+            color: "#1e293b"
+            wrapMode: Text.WordWrap
+            width: 300
         }
     }
 }

@@ -8,14 +8,14 @@
 #include <QJsonDocument>
 #include <QJsonArray>
 #include <QJsonObject>
+#include <QDate>
 
 StockApiClient::StockApiClient(QObject *parent)
     : QObject(parent)
 {
     networkManager = new QNetworkAccessManager(this);
 }
-
-void StockApiClient::fetchStockData(const QString &symbol)
+void StockApiClient::fetchStockData(const QString &symbol, int days)
 {
     QUrl url("https://eodhd.com/api/eod/" + symbol);
 
@@ -23,8 +23,11 @@ void StockApiClient::fetchStockData(const QString &symbol)
     query.addQueryItem("api_token", qEnvironmentVariable("EODHD_API_TOKEN"));
     query.addQueryItem("fmt", "json");
     query.addQueryItem("period", "d");
-    query.addQueryItem("from", "2026-11-01");
-    query.addQueryItem("to", "2026-11-15");
+    QDate today = QDate::currentDate();
+    QDate fromDate = today.addDays(-days);
+
+    query.addQueryItem("from", fromDate.toString("yyyy-MM-dd"));
+    query.addQueryItem("to", today.toString("yyyy-MM-dd"));
 
     url.setQuery(query);
 
@@ -48,10 +51,22 @@ void StockApiClient::fetchStockData(const QString &symbol)
 
                         qDebug() << "Ugyldig JSON-svar";
 
+                        emit errorOccurred(
+                            "Kunne ikke lese aksjedata fra API-et."
+                            );
+
                     } else {
 
-
                         QJsonArray stockData = document.array();
+
+                        if (stockData.isEmpty()) {
+                            emit errorOccurred(
+                                "Ingen aksjekurser funnet for valgt periode."
+                                );
+
+                            reply->deleteLater();
+                            return;
+                        }
 
                         QList<StockData> stockList;
 
@@ -61,6 +76,11 @@ void StockApiClient::fetchStockData(const QString &symbol)
 
                             QString date = stock["date"].toString();
                             double close = stock["close"].toDouble();
+
+                            if (date.isEmpty() || !stock["close"].isDouble()) {
+                                qDebug() << "Hopper over ugyldig kursregistrering";
+                                continue;
+                            }// Dette gjør at programmet ikke forsøker å vise en kursregistrering som mangler dato eller gyldig sluttkurs.
 
                             StockData item;
                             item.date = date;
@@ -72,6 +92,15 @@ void StockApiClient::fetchStockData(const QString &symbol)
                                      << "Sluttkurs:" << close << "NOK";
                         }
 
+                        if (stockList.isEmpty()) {
+                            emit errorOccurred(
+                                "Ingen gyldige aksjekurser funnet."
+                                );
+
+                            reply->deleteLater();
+                            return;
+                        }// Dette sikrer at vi ikke erstatter eksisterende aksjekurser med en tom liste når alle registreringene er ugyldige
+
                         if (m_stockModel) {
                             m_stockModel->setStockData(stockList);
                             qDebug() << "Antall dager i modellen:"
@@ -81,7 +110,12 @@ void StockApiClient::fetchStockData(const QString &symbol)
                     }
 
                 } else {
-                    qDebug() << "Nettverksfeil:" << reply->errorString();
+                    QString errorMessage =
+                        "Kunne ikke hente aksjekurser: " + reply->errorString();
+
+                    qDebug() << errorMessage;
+
+                    emit errorOccurred(errorMessage);
                 }
 
                 reply->deleteLater();

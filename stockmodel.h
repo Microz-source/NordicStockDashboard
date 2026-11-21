@@ -6,7 +6,7 @@
 #include <QList>
 #include <QString>
 
-// Informasjon om én handelsdag
+                // Informasjon om én handelsdag
 struct StockData
 {
     QString date;
@@ -20,13 +20,13 @@ class StockModel : public QAbstractListModel
 public:
     explicit StockModel(QObject *parent = nullptr);
 
-    // Feltene som QML skal kunne lese
+                // Feltene som QML skal kunne lese
     enum StockRoles {
         DateRole = Qt::UserRole + 1,
         CloseRole
     };
 
-    // Obligatoriske funksjoner i modellen
+                 // Obligatoriske funksjoner i modellen
     int rowCount(
         const QModelIndex &parent = QModelIndex()
         ) const override;
@@ -38,10 +38,10 @@ public:
 
     QHash<int, QByteArray> roleNames() const override;
 
-    // Legger inn aksjedata i modellen
+                     // Legger inn aksjedata i modellen
     void setStockData(const QList<StockData> &data);
 
-    // Grafen trenger en enkel måte å lese aksjekursene fra C++ på
+                // Grafen trenger en enkel måte å lese aksjekursene fra C++ på
     Q_INVOKABLE int count() const
     {
         return rowCount();
@@ -63,9 +63,8 @@ public:
         return m_stockData.at(row).date;
     }
 
-
 private:
     QList<StockData> m_stockData;
 };
 
-#endif // STOCKMODEL_H
+#endif              // STOCKMODEL_H

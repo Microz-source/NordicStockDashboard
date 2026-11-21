@@ -14,8 +14,11 @@ class StockApiClient : public QObject
 public:
     explicit StockApiClient(QObject *parent = nullptr);
 
-    Q_INVOKABLE void fetchStockData(const QString &symbol); //er funksjonen som skal hente aksjedata
+    Q_INVOKABLE void fetchStockData(const QString &symbol, int days = 30); //er funksjonen som skal hente aksjedata
     void setStockModel(StockModel *model);
+
+signals:                                    // errorOccurred er et signal som C++ kan sende til QML når noe går galt
+    void errorOccurred(const QString &message);
 
 private:
     QNetworkAccessManager *networkManager;     //er objektet som håndterer nettverkskommunikasjonen
