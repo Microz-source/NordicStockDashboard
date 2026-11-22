@@ -19,10 +19,12 @@ public:
 
 signals:                                    // errorOccurred er et signal som C++ kan sende til QML når noe går galt
     void errorOccurred(const QString &message);
+    void loadingChanged(bool loading);     // singanl - når API henter data
 
 private:
     QNetworkAccessManager *networkManager;     //er objektet som håndterer nettverkskommunikasjonen
     StockModel *m_stockModel = nullptr;
+    QNetworkReply *m_activeReply = nullptr;
 };
 
 #endif // STOCKAPICLIENT_H

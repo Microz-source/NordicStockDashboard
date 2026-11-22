@@ -31,6 +31,9 @@ QVariant StockModel::data(const QModelIndex &index, int role) const
     case CloseRole:
         return stock.close;
 
+    case OpenRole:
+        return stock.open;
+
     default:
         return {};
     }
@@ -40,7 +43,8 @@ QHash<int, QByteArray> StockModel::roleNames() const
 {
     return {
         {DateRole, "date"},
-        {CloseRole, "close"}
+        {CloseRole, "close"},
+        {OpenRole, "open"}
     };
 }
                                                     // legger aksjedata inn i modellen og gir beskjed om at innholdet er oppdatert

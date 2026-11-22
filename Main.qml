@@ -158,6 +158,15 @@ ApplicationWindow {
             color: "#1e293b"
         }
 
+        Label {
+            id: loadingLabel
+            text: "Henter aksjekurser ..."
+            color: "#2563eb"
+            font.pixelSize: 14
+            font.bold: true
+            visible: false
+        }
+
         StockChart {
             Layout.fillWidth: true
             Layout.preferredHeight: 220
@@ -176,16 +185,30 @@ ApplicationWindow {
                 anchors.leftMargin: 16
                 anchors.rightMargin: 16
 
-
                 Label {
                     text: "Dato"
                     Layout.fillWidth: true
+                    Layout.preferredWidth: 1
                     font.bold: true
+                    color: "#1e293b"
+                }
+
+                Label {
+                    text: "Åpningskurs (NOK)"
+                    Layout.fillWidth: true
+                    Layout.preferredWidth: 1
+                    font.bold: true
+                    color: "#1e293b"
+                    horizontalAlignment: Text.AlignRight
                 }
 
                 Label {
                     text: "Sluttkurs (NOK)"
+                    Layout.fillWidth: true
+                    Layout.preferredWidth: 1
                     font.bold: true
+                    color: "#1e293b"
+                    horizontalAlignment: Text.AlignRight
                 }
             }
         }
@@ -222,7 +245,20 @@ ApplicationWindow {
                                 : index
                         )
                         Layout.fillWidth: true
+                        Layout.preferredWidth: 1
                         color: "#334155"
+                    }
+
+                    Label {
+                        text: Number(stockModel.openAt(
+                            stockList.newestFirst
+                                ? stockModel.count() - 1 - index
+                                : index
+                        )).toFixed(2) + " kr"
+
+                        Layout.fillWidth: true
+                        Layout.preferredWidth: 1
+                        horizontalAlignment: Text.AlignRight
                     }
 
                     Label {
@@ -231,18 +267,26 @@ ApplicationWindow {
                                 ? stockModel.count() - 1 - index
                                 : index
                         )).toFixed(2) + " kr"
-                        color: "#334155"
+
+                        Layout.fillWidth: true
+                        Layout.preferredWidth: 1
+                        horizontalAlignment: Text.AlignRight
                     }
                 }
             }
         }
     }
+
     Connections {
         target: stockApiClient
 
         function onErrorOccurred(message) {
             errorDialog.text = message
             errorDialog.open()
+        }
+
+        function onLoadingChanged(loading) {
+            loadingLabel.visible = loading
         }
     }
 

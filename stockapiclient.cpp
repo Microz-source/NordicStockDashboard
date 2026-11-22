@@ -17,6 +17,13 @@ StockApiClient::StockApiClient(QObject *parent)
 }
 void StockApiClient::fetchStockData(const QString &symbol, int days)
 {
+    if (m_activeReply) {
+        m_activeReply->abort();
+        m_activeReply = nullptr;
+    }
+
+    emit loadingChanged(true);
+
     QUrl url("https://eodhd.com/api/eod/" + symbol);
 
     QUrlQuery query;
@@ -34,12 +41,17 @@ void StockApiClient::fetchStockData(const QString &symbol, int days)
     QNetworkRequest request(url);
 
     QNetworkReply *reply = networkManager->get(request);
+    m_activeReply = reply;
 
     connect(reply, &QNetworkReply::finished,
             this, [this, reply]() {
 
-                if (reply->error() == QNetworkReply::NoError) {
+                if (reply != m_activeReply) {
+                    reply->deleteLater();
+                    return;
+                }
 
+                if (reply->error() == QNetworkReply::NoError) {
                     QByteArray data = reply->readAll();
 
                     QJsonParseError parseError;
@@ -60,10 +72,9 @@ void StockApiClient::fetchStockData(const QString &symbol, int days)
                         QJsonArray stockData = document.array();
 
                         if (stockData.isEmpty()) {
-                            emit errorOccurred(
-                                "Ingen aksjekurser funnet for valgt periode."
-                                );
-
+                            emit errorOccurred("Ingen aksjekurser funnet for valgt periode.");
+                            emit loadingChanged(false);
+                            m_activeReply = nullptr;
                             reply->deleteLater();
                             return;
                         }
@@ -75,15 +86,19 @@ void StockApiClient::fetchStockData(const QString &symbol, int days)
                             QJsonObject stock = value.toObject();
 
                             QString date = stock["date"].toString();
+                            double open = stock["open"].toDouble();
                             double close = stock["close"].toDouble();
 
-                            if (date.isEmpty() || !stock["close"].isDouble()) {
+                            if (date.isEmpty()
+                                || !stock["open"].isDouble()
+                                || !stock["close"].isDouble()) {
                                 qDebug() << "Hopper over ugyldig kursregistrering";
                                 continue;
                             }// Dette gjør at programmet ikke forsøker å vise en kursregistrering som mangler dato eller gyldig sluttkurs.
 
                             StockData item;
                             item.date = date;
+                            item.open = open;
                             item.close = close;
 
                             stockList.append(item);
@@ -93,10 +108,9 @@ void StockApiClient::fetchStockData(const QString &symbol, int days)
                         }
 
                         if (stockList.isEmpty()) {
-                            emit errorOccurred(
-                                "Ingen gyldige aksjekurser funnet."
-                                );
-
+                            emit errorOccurred("Ingen gyldige aksjekurser funnet.");
+                            emit loadingChanged(false);
+                            m_activeReply = nullptr;
                             reply->deleteLater();
                             return;
                         }// Dette sikrer at vi ikke erstatter eksisterende aksjekurser med en tom liste når alle registreringene er ugyldige
@@ -118,8 +132,10 @@ void StockApiClient::fetchStockData(const QString &symbol, int days)
                     emit errorOccurred(errorMessage);
                 }
 
+                emit loadingChanged(false);
+                m_activeReply = nullptr;
                 reply->deleteLater();
-            });
+    });
 }
                                                         // forteller API-klassen hvilken modell som skal motta aksjedataene
 void StockApiClient::setStockModel(StockModel *model)

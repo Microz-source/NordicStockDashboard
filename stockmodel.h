@@ -9,9 +9,10 @@
                 // Informasjon om én handelsdag
 struct StockData
 {
-    QString date;
-    double close;
-};
+        QString date;
+        double open;
+        double close;
+    };
 
 class StockModel : public QAbstractListModel
 {
@@ -23,7 +24,8 @@ public:
                 // Feltene som QML skal kunne lese
     enum StockRoles {
         DateRole = Qt::UserRole + 1,
-        CloseRole
+        CloseRole,
+        OpenRole
     };
 
                  // Obligatoriske funksjoner i modellen
@@ -53,6 +55,14 @@ public:
             return 0.0;
 
         return m_stockData.at(row).close;
+    }
+
+    Q_INVOKABLE double openAt(int row) const
+    {
+        if (row < 0 || row >= m_stockData.size())
+            return 0.0;
+
+        return m_stockData.at(row).open;
     }
 
     Q_INVOKABLE QString dateAt(int row) const
