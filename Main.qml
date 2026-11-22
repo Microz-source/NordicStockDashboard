@@ -126,6 +126,29 @@ ApplicationWindow {
                     )
                 }
             }
+
+            Label {
+                text: "Sortering:"
+                color: "#1e293b"
+            }
+
+            ComboBox {
+                id: sortSelector
+                Layout.preferredWidth: 150
+
+                model: ["Eldste først", "Nyeste først"]
+                currentIndex: 0
+
+                contentItem: Text {
+                    leftPadding: 10
+                    rightPadding: 30
+                    text: sortSelector.displayText
+                    color: "#1e293b"
+                    font.pixelSize: 14
+                    verticalAlignment: Text.AlignVCenter
+                    elide: Text.ElideRight
+                }
+            }
         }
 
         Label {
@@ -177,6 +200,7 @@ ApplicationWindow {
             spacing: 4
 
             model: stockModel
+            property bool newestFirst: sortSelector.currentIndex === 1
 
             delegate: Rectangle {
                 width: stockList.width
@@ -192,13 +216,21 @@ ApplicationWindow {
                     anchors.rightMargin: 16
 
                     Label {
-                        text: model.date
+                        text: stockModel.dateAt(
+                            stockList.newestFirst
+                                ? stockModel.count() - 1 - index
+                                : index
+                        )
                         Layout.fillWidth: true
                         color: "#334155"
                     }
 
                     Label {
-                        text: Number(model.close).toFixed(2) + " kr"
+                        text: Number(stockModel.closeAt(
+                            stockList.newestFirst
+                                ? stockModel.count() - 1 - index
+                                : index
+                        )).toFixed(2) + " kr"
                         color: "#334155"
                     }
                 }
